@@ -1,10 +1,12 @@
 import os
+import sys
 from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
 
 from api import api, run_workers
+from utils import check_s3_connection
 
 
 @asynccontextmanager
@@ -16,6 +18,15 @@ async def lifespan(app: FastAPI):
     aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID", "")
     aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY", "")
     aws_region = os.getenv("AWS_REGION", "us-east-1")
+
+    # Check S3 connection
+    if not check_s3_connection(
+        s3_bucket=s3_bucket,
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        aws_region=aws_region,
+    ):
+        print("⚠️  Warning: S3 connection check failed. Continuing with startup...", file=sys.stderr)
 
     await run_workers(
         num_workers=num_workers,
