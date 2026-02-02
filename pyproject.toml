@@ -1,0 +1,56 @@
+[project]
+name = "ffmpeg-api"
+version = "0.1.0"
+description = "Accessing FFmpeg functionality via a RESTful API."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.128.0",
+    "uvicorn[standard]>=0.30.0",
+    "boto3>=1.35.0",
+    "httpx>=0.26.0",
+    "pydantic>=2.7.0",
+    "python-multipart>=0.0.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "flake8>=7.0.0",
+    "pre-commit>=3.7.0",
+    "black>=24.4.2",
+    "isort>=5.13.2",
+    "flake8-bugbear>=24.4.26",
+    "flake8-comprehensions>=3.14.0",
+    "flake8-implicit-str-concat>=0.4.0",
+    "flake8-print>=5.0.0",
+    "pep8-naming>=0.13.3",
+    "flake8-builtins>=2.5.0",
+    "flake8-eradicate>=1.5.0",
+    "flake8-tidy-imports>=4.10.0",
+    "mypy>=1.7,<1.8",
+    "types-requests>=2.32.0.20241016",
+    "ruff>=0.12.0",
+]
+
+
+#### For lint/type checking ####
+[tool.mypy]
+python_version = "3.12"                                    # check linting based on Python 3.10
+ignore_missing_imports = false
+check_untyped_defs = true
+
+files = ["./"]
+exclude = ["venv", ".git", ".github", "migrations", "tests"]
+disable_error_code = []
+
+
+#### For formatting ####
+[tool.isort]
+profile = "black"
+
+#### Ruff ####
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+extend-select = ["A", "B", "N", "I", "C4", "ISC", "TID", "UP", "Q"]
