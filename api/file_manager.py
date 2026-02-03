@@ -72,9 +72,9 @@ class FileManager:
 
         # Generate a pre-signed HTTP URL valid for 7 days (604800 seconds)
         presigned_url = self.s3_client.generate_presigned_url(
-            'get_object',
-            Params={'Bucket': self.s3_bucket, 'Key': s3_key},
-            ExpiresIn=604800  # 7 days in seconds
+            "get_object",
+            Params={"Bucket": self.s3_bucket, "Key": s3_key},
+            ExpiresIn=604800,  # 7 days in seconds
         )
         return presigned_url
 

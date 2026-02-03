@@ -8,7 +8,7 @@ A RESTful API for executing FFmpeg commands with asynchronous task management, b
 - **Asynchronous Execution**: Execute tasks asynchronously with task ID tracking
 - **Status Checking**: Poll task status to check if execution is complete
 - **File Management**: Automatically download input files from URLs and upload outputs to S3
-- **S3 Integration**: Output files are automatically uploaded to AWS S3 and S3 URLs are returned
+- **S3 Integration**: Output files are automatically uploaded to AWS S3 and downloadable HTTP links (pre-signed, valid for 7 days) are returned
 
 ## Requirements
 
@@ -60,11 +60,13 @@ Register a new FFmpeg task and get a task ID.
 
 ```json
 {
-  "command": "-i input.mp4 -c:v libx264 -crf 23 output.mp4",
+  "ffmpeg_command": "-i in_1 -c:v libx264 -crf 23 out_1",
   "input_files": {
-    "input.mp4": "https://example.com/video.mp4"
+    "in_1": "https://example.com/video.mp4"
   },
-  "output_filename": "output.mp4"
+  "output_files": {
+    "out_1": "output.mp4"
+  }
 }
 ```
 
@@ -74,7 +76,7 @@ Register a new FFmpeg task and get a task ID.
 {
   "task_id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "pending",
-  "output_url": null,
+  "output_urls": null,
   "error_message": null
 }
 ```
@@ -95,7 +97,9 @@ Execute a registered task. Downloads input files, runs the FFmpeg command, and u
 {
   "task_id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "completed",
-  "output_url": "s3://your-bucket/ffmpeg-outputs/550e8400-e29b-41d4-a716-446655440000/output.mp4",
+  "output_urls": {
+    "out_1": "https://your-bucket.s3.amazonaws.com/ffmpeg-outputs/550e8400-e29b-41d4-a716-446655440000/output.mp4?X-Amz-Expires=604800&..."
+  },
   "error_message": null
 }
 ```
@@ -104,7 +108,7 @@ Execute a registered task. Downloads input files, runs the FFmpeg command, and u
 
 **GET** `/ffmpeg/status/{task_id}`
 
-Check the status of a task without executing it. If completed, returns the S3 output URL.
+Check the status of a task without executing it. If completed, returns a downloadable HTTP link (pre-signed, valid for 7 days).
 
 **Path Parameters:**
 
@@ -116,7 +120,9 @@ Check the status of a task without executing it. If completed, returns the S3 ou
 {
   "task_id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "completed",
-  "output_url": "s3://your-bucket/ffmpeg-outputs/550e8400-e29b-41d4-a716-446655440000/output.mp4",
+  "output_urls": {
+    "out_1": "https://your-bucket.s3.amazonaws.com/ffmpeg-outputs/550e8400-e29b-41d4-a716-446655440000/output.mp4?X-Amz-Expires=604800&..."
+  },
   "error_message": null
 }
 ```
@@ -158,25 +164,31 @@ Check FFmpeg availability on the system.
 ## Example Workflow
 
 ```bash
+
 # 1. Register a task
 curl -X POST http://localhost:8000/ffmpeg/register \
   -H "Content-Type: application/json" \
   -d '{
-    "command": "-i input.mp4 -vf scale=1280:720 output.mp4",
-    "input_files": {"input.mp4": "https://example.com/video.mp4"},
-    "output_filename": "output.mp4"
+    "ffmpeg_command": "-i in_1 -vf scale=1280:720 out_1",
+    "input_files": {"in_1": "https://example.com/video.mp4"},
+    "output_files": {"out_1": "output.mp4"}
   }'
 
 # Response: {"task_id": "abc-123", "status": "pending", ...}
+
 
 # 2. Execute the task
 curl -X POST http://localhost:8000/ffmpeg/execute/abc-123
 
 # Response: {"task_id": "abc-123", "status": "completed",
-#           "output_url": "s3://bucket/ffmpeg-outputs/abc-123/output.mp4", ...}
+#           "output_urls": {"out_1": "https://bucket.s3.amazonaws.com/ffmpeg-outputs/abc-123/output.mp4?X-Amz-Expires=604800&..."}, ...}
+
 
 # 3. Or check status without executing
 curl http://localhost:8000/ffmpeg/status/abc-123
+
+# Response: {"task_id": "abc-123", "status": "completed",
+#           "output_urls": {"out_1": "https://bucket.s3.amazonaws.com/ffmpeg-outputs/abc-123/output.mp4?X-Amz-Expires=604800&..."}, ...}
 ```
 
 ## Notes
@@ -185,5 +197,6 @@ curl http://localhost:8000/ffmpeg/status/abc-123
 - The FFmpeg command should not include the `ffmpeg` prefix
 - Input filenames in the command should match the keys in `input_files` dictionary
 - Output files are automatically uploaded to S3 with a key pattern: `ffmpeg-outputs/{task_id}/{output_filename}`
+- Output URLs returned by the API are downloadable HTTP links (pre-signed, valid for 7 days). These links expire after 7 days for security.
 - Temporary files are cleaned up after task completion or failure
 - The API uses in-memory task storage; tasks are lost on server restart
