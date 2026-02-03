@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 
 from .ffmpeg_executor import FFmpegExecutor
 from .file_manager import FileManager
@@ -25,6 +26,7 @@ class TaskWorker:
         self.aws_access_key_id = aws_access_key_id
         self.aws_secret_access_key = aws_secret_access_key
         self.aws_region = aws_region
+        self.s3_url = os.getenv("S3_ENDPOINT_URL", None)
         self.running = False
 
     def get_file_manager(self) -> FileManager:
@@ -34,6 +36,7 @@ class TaskWorker:
             aws_access_key_id=self.aws_access_key_id,
             aws_secret_access_key=self.aws_secret_access_key,
             aws_region=self.aws_region,
+            s3_url=self.s3_url,
         )
 
     async def process_task(self, task: Task) -> None:

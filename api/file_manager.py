@@ -26,6 +26,7 @@ class FileManager:
             s3_url=s3_url,
         )
         self.s3_client = S3ClientSingleton.get_client()
+        self.s3_url = s3_url
 
     async def download_file(self, url: str, filename: str) -> str:
         """Download a file from URL and save it locally.
@@ -73,7 +74,7 @@ class FileManager:
             s3_key,
         )
 
-        sign_urls = os.environ.get("S3_SIGN_URLS", "true").lower() in ("true", "1", "yes")
+        sign_urls = os.getenv("S3_SIGN_URLS", "true").lower() in ("true", "1", "yes")
         if sign_urls:
             # Generate a pre-signed HTTP URL valid for 7 days (604800 seconds)
             presigned_url = self.s3_client.generate_presigned_url(
@@ -83,11 +84,9 @@ class FileManager:
             )
             return presigned_url
         else:
-            # Return the direct public URL
-            # If s3_url is set, use it as endpoint, otherwise use AWS-style URL
-            s3_url = getattr(self.s3_client, "endpoint_url", None)
-            if s3_url:
-                public_url = f"{s3_url}/{self.s3_bucket}/{s3_key}"
+            # Return the direct public URL using the s3_url argument or AWS-style fallback
+            if self.s3_url:
+                public_url = f"{self.s3_url.rstrip('/')}/{self.s3_bucket}/{s3_key}"
             else:
                 public_url = f"https://{self.s3_bucket}.s3.amazonaws.com/{s3_key}"
             return public_url
