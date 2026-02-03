@@ -73,7 +73,7 @@ class FileManager:
             s3_key,
         )
 
-        sign_urls = os.environ.get("S3_SIGN_URLS", "true").lower() != "false"
+        sign_urls = os.environ.get("S3_SIGN_URLS", "true").lower() in ("true", "1", "yes")
         if sign_urls:
             # Generate a pre-signed HTTP URL valid for 7 days (604800 seconds)
             presigned_url = self.s3_client.generate_presigned_url(
