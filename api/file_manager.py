@@ -48,18 +48,21 @@ class FileManager:
             return file_path
 
     async def download_files(self, input_files: dict[str, str]) -> dict[str, str]:
-        """Download multiple files.
+        """Download multiple files and log file existence and size after download."""
+        import logging
 
-        Args:
-            input_files: Dict mapping local filenames to URLs
-
-        Returns:
-            Dict mapping filenames to local paths
-        """
         local_paths = {}
+        logger = logging.getLogger(__name__)
+        logger.info(f"Using temp directory: {self.temp_dir}")
         for filename, url in input_files.items():
             local_path = await self.download_file(url, filename)
             local_paths[filename] = local_path
+            # Log file existence and size
+            if os.path.exists(local_path):
+                size = os.path.getsize(local_path)
+                logger.info(f"Downloaded {filename} to {local_path} (size: {size} bytes)")
+            else:
+                logger.error(f"File {local_path} does not exist after download!")
         return local_paths
 
     def upload_to_s3(self, file_path: str, s3_key: str) -> str:
