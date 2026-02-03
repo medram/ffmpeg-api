@@ -81,29 +81,6 @@ Register a new FFmpeg task and get a task ID.
 }
 ```
 
-### 2. Execute Task
-
-**POST** `/ffmpeg/execute/{task_id}`
-
-Execute a registered task. Downloads input files, runs the FFmpeg command, and uploads the output to S3.
-
-**Path Parameters:**
-
-- `task_id` (string, required): The task ID from registration
-
-**Response:**
-
-```json
-{
-  "task_id": "550e8400-e29b-41d4-a716-446655440000",
-  "status": "completed",
-  "output_urls": {
-    "out_1": "https://your-bucket.s3.amazonaws.com/ffmpeg-outputs/550e8400-e29b-41d4-a716-446655440000/output.mp4?X-Amz-Expires=604800&..."
-  },
-  "error_message": null
-}
-```
-
 ### 3. Check Task Status
 
 **GET** `/ffmpeg/status/{task_id}`
@@ -177,11 +154,6 @@ curl -X POST http://localhost:8000/ffmpeg/register \
 # Response: {"task_id": "abc-123", "status": "pending", ...}
 
 
-# 2. Execute the task
-curl -X POST http://localhost:8000/ffmpeg/execute/abc-123
-
-# Response: {"task_id": "abc-123", "status": "completed",
-#           "output_urls": {"out_1": "https://bucket.s3.amazonaws.com/ffmpeg-outputs/abc-123/output.mp4?X-Amz-Expires=604800&..."}, ...}
 
 
 # 3. Or check status without executing
