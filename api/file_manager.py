@@ -66,20 +66,31 @@ class FileManager:
         return local_paths
 
     def upload_to_s3(self, file_path: str, s3_key: str) -> str:
-        """Upload a file to S3 bucket and return a 7-day pre-signed HTTP URL."""
+        """Upload a file to S3 bucket and return either a public URL or a 7-day pre-signed HTTP URL, depending on S3_SIGN_URLS env var."""
         self.s3_client.upload_file(
             file_path,
             self.s3_bucket,
             s3_key,
         )
 
-        # Generate a pre-signed HTTP URL valid for 7 days (604800 seconds)
-        presigned_url = self.s3_client.generate_presigned_url(
-            "get_object",
-            Params={"Bucket": self.s3_bucket, "Key": s3_key},
-            ExpiresIn=604800,  # 7 days in seconds
-        )
-        return presigned_url
+        sign_urls = os.environ.get("S3_SIGN_URLS", "true").lower() != "false"
+        if sign_urls:
+            # Generate a pre-signed HTTP URL valid for 7 days (604800 seconds)
+            presigned_url = self.s3_client.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": self.s3_bucket, "Key": s3_key},
+                ExpiresIn=604800,  # 7 days in seconds
+            )
+            return presigned_url
+        else:
+            # Return the direct public URL
+            # If s3_url is set, use it as endpoint, otherwise use AWS-style URL
+            s3_url = getattr(self.s3_client, "endpoint_url", None)
+            if s3_url:
+                public_url = f"{s3_url}/{self.s3_bucket}/{s3_key}"
+            else:
+                public_url = f"https://{self.s3_bucket}.s3.amazonaws.com/{s3_key}"
+            return public_url
 
     def cleanup(self) -> None:
         """Clean up temporary files."""

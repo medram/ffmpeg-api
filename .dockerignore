@@ -47,5 +47,7 @@ temp/
 docker-compose.override.yml
 Dockerfile.dev
 
+.env
+
 # Project specific
 .python-version
