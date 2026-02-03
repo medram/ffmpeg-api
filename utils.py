@@ -1,7 +1,5 @@
 import sys
 
-import boto3
-
 
 def check_s3_connection(
     s3_bucket: str,
@@ -21,14 +19,14 @@ def check_s3_connection(
         True if connection is successful, False otherwise
     """
     try:
-        s3_client = boto3.client(
-            "s3",
+        from api.s3_singleton import S3ClientSingleton
+
+        S3ClientSingleton.configure(
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
-            region_name=aws_region,
+            aws_region=aws_region,
         )
-
-        # Try to list objects in the bucket
+        s3_client = S3ClientSingleton.get_client()
         s3_client.head_bucket(Bucket=s3_bucket)
         print(f"✓ S3 connection successful! Bucket '{s3_bucket}' is accessible.")
         return True

@@ -1,7 +1,6 @@
 import os
 import tempfile
 
-import boto3
 import httpx
 
 
@@ -14,15 +13,19 @@ class FileManager:
         aws_access_key_id: str,
         aws_secret_access_key: str,
         aws_region: str = "us-east-1",
+        s3_url: str | None = None,
     ):
+        from .s3_singleton import S3ClientSingleton
+
         self.s3_bucket = s3_bucket
         self.temp_dir = tempfile.mkdtemp()
-        self.s3_client = boto3.client(
-            "s3",
+        S3ClientSingleton.configure(
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
-            region_name=aws_region,
+            aws_region=aws_region,
+            s3_url=s3_url,
         )
+        self.s3_client = S3ClientSingleton.get_client()
 
     async def download_file(self, url: str, filename: str) -> str:
         """Download a file from URL and save it locally.
@@ -60,24 +63,20 @@ class FileManager:
         return local_paths
 
     def upload_to_s3(self, file_path: str, s3_key: str) -> str:
-        """Upload a file to S3 bucket.
-
-        Args:
-            file_path: Local path to the file to upload
-            s3_key: S3 key (path in bucket)
-
-        Returns:
-            S3 URL of the uploaded file
-        """
+        """Upload a file to S3 bucket and return a 7-day pre-signed HTTP URL."""
         self.s3_client.upload_file(
             file_path,
             self.s3_bucket,
             s3_key,
         )
 
-        # Generate S3 URL
-        s3_url = f"s3://{self.s3_bucket}/{s3_key}"
-        return s3_url
+        # Generate a pre-signed HTTP URL valid for 7 days (604800 seconds)
+        presigned_url = self.s3_client.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': self.s3_bucket, 'Key': s3_key},
+            ExpiresIn=604800  # 7 days in seconds
+        )
+        return presigned_url
 
     def cleanup(self) -> None:
         """Clean up temporary files."""
