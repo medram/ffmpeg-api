@@ -89,5 +89,7 @@ class FileManager:
             shutil.rmtree(self.temp_dir)
 
     def get_temp_file_path(self, filename: str) -> str:
-        """Get path for a file in the temp directory."""
+        """Get path for a file in the temp directory, unless already absolute."""
+        if os.path.isabs(filename):
+            return filename
         return os.path.join(self.temp_dir, filename)

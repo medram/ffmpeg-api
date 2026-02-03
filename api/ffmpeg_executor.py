@@ -1,4 +1,5 @@
 import asyncio
+import os
 import re
 import shlex
 import shutil
@@ -44,7 +45,8 @@ class FFmpegExecutor:
         command_str = command_args
 
         # Prepare ordered list of input paths for in_1, in_2, ...
-        ordered_inputs = list(input_files.values())
+        # Ensure all are absolute paths (defensive, but should already be absolute)
+        ordered_inputs = [os.path.abspath(p) for p in input_files.values()]
 
         # Helper to shell-quote paths
         def q(path: str) -> str:
@@ -67,21 +69,18 @@ class FFmpegExecutor:
                 idx = int(m.group(1)) - 1
                 if 0 <= idx < len(ordered_inputs):
                     return q(ordered_inputs[idx])
-                # leave as-is if out of range
                 return match.group(0)
             # direct input key (match against input_files keys)
             if key in input_files:
-                return q(input_files[key])
+                # Always use the absolute path, never join again
+                return q(os.path.abspath(input_files[key]))
             # unknown placeholder -> leave unchanged
             return match.group(0)
 
         command_str = pattern.sub(replace_placeholder, command_str)
 
-        # Replace any remaining occurrences of input filenames (non-placeholder)
-        # with their local paths (shell-quoted).
-        for filename, file_path in input_files.items():
-            # Use simple replace; this mirrors previous behavior but quotes the path
-            command_str = command_str.replace(filename, q(file_path))
+        # Remove legacy replacement of non-placeholder input filenames to avoid accidental double paths
+        # (No longer needed and can cause double temp dir issues)
 
         # If command doesn't contain an explicit output placeholder and a single output_path provided,
         # append the output path (legacy behavior). If multiple output_files provided, do not auto-append.
