@@ -28,13 +28,7 @@ async def lifespan(app: FastAPI):
     ):
         print("⚠️  Warning: S3 connection check failed. Continuing with startup...", file=sys.stderr)
 
-    await run_workers(
-        num_workers=num_workers,
-        s3_bucket=s3_bucket,
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key,
-        aws_region=aws_region,
-    )
+    await run_workers(num_workers=num_workers)
 
     yield
 

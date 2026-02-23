@@ -54,23 +54,14 @@ async def main():
 
     # Get configuration
     num_workers = args.num_workers
-    s3_bucket = os.getenv("S3_BUCKET", "ffmpeg-output")
-    aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID", "")
-    aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY", "")
-    aws_region = os.getenv("AWS_REGION", "us-east-1")
 
+    s3_bucket = os.getenv("S3_BUCKET", "ffmpeg-output")
     logger.info(f"Starting {num_workers} worker(s)")
     logger.info(f"S3 Bucket: {s3_bucket}")
 
     try:
         # Run workers
-        await run_workers(
-            num_workers=num_workers,
-            s3_bucket=s3_bucket,
-            aws_access_key_id=aws_access_key_id,
-            aws_secret_access_key=aws_secret_access_key,
-            aws_region=aws_region,
-        )
+        await run_workers(num_workers=num_workers)
     except KeyboardInterrupt:
         logger.info("Shutting down workers...")
     except Exception as e:
