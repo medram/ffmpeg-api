@@ -1,4 +1,11 @@
+from __future__ import annotations
+
+import os
 import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from api.file_manager import FileManager
 
 
 def check_s3_connection(
@@ -33,3 +40,16 @@ def check_s3_connection(
     except Exception as e:
         print(f"✗ S3 connection failed: {str(e)}", file=sys.stderr)
         return False
+
+
+def get_file_manager() -> FileManager:
+    """Get a configured FileManager instance."""
+    from api.file_manager import FileManager
+
+    return FileManager(
+        s3_bucket=os.getenv("S3_BUCKET", "ffmpeg-output"),
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID", ""),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", ""),
+        aws_region=os.getenv("AWS_REGION", "us-east-1"),
+        s3_url=os.getenv("S3_ENDPOINT_URL", None),
+    )
