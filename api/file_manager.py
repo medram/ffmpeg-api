@@ -1,4 +1,5 @@
 import os
+import mimetypes
 import tempfile
 
 import httpx
@@ -66,13 +67,18 @@ class FileManager:
                 logger.error(f"File {local_path} does not exist after download!")
         return local_paths
 
+
     def upload_to_s3(self, file_path: str, s3_key: str) -> str:
-        """Upload a file to S3 bucket and return either a public URL or a 7-day pre-signed HTTP URL, depending on S3_SIGN_URLS env var."""
-        self.s3_client.upload_file(
-            file_path,
-            self.s3_bucket,
-            s3_key,
-        )
+        """Upload a file to S3 bucket and return either a public URL or a 7-day pre-signed HTTP URL, depending on S3_SIGN_URLS env var. Sets content-type metadata."""
+        content_type, _ = mimetypes.guess_type(file_path)
+        extra_args = {"ContentType": content_type} if content_type else {}
+        with open(file_path, "rb") as f:
+            self.s3_client.upload_fileobj(
+                f,
+                self.s3_bucket,
+                s3_key,
+                ExtraArgs=extra_args if extra_args else None
+            )
 
         sign_urls = os.getenv("S3_SIGN_URLS", "true").lower() in ("true", "1", "yes")
         if sign_urls:
