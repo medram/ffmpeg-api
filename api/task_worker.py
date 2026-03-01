@@ -89,8 +89,8 @@ class TaskWorker:
         output_path = file_manager.get_temp_file_path(output_filename)
         merge_cmd = (
             f"ffmpeg -y -stream_loop -1 -i {video_local} -i {merged_audio} "
-            f"-map 0:v -map 1:a -shortest -c:v libx264 -preset fast -crf 18 "
-            f"-c:a aac -b:a 192k -t {duration} {output_path}"
+            f"-map 0:v -map 1:a -shortest -c:v libx264 -preset medium -crf 23 "
+            f"-c:a aac -b:a 128k -movflags +faststart -t {duration} {output_path}"
         )
         proc = await asyncio.create_subprocess_shell(
             merge_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
